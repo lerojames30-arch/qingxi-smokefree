@@ -21,10 +21,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 设置 Node.js 环境
+      - name: 设置 Node.js 环境 (Node 22)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: 安装 Node.js 依赖并同步 Capacitor
         run: |
