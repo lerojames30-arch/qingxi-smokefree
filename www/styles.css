@@ -1283,11 +1283,20 @@ body {
 .chart-canvas-wrap {
   width: 100%;
   position: relative;
+  min-height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
 }
 
 .chart-canvas-wrap canvas {
   width: 100% !important;
   display: block;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .scenario-layout {
@@ -1304,11 +1313,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  position: relative;
 }
 
 .donut-chart-wrap canvas {
-  width: 100% !important;
-  height: 100% !important;
+  width: 130px !important;
+  height: 130px !important;
+  display: block;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .scenario-legend-list {

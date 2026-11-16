@@ -902,26 +902,56 @@
   }
 
   // ==========================================
-  // 高清自适应 Canvas 图表引擎 (适配 devicePixelRatio)
+  // 高清自适应 Canvas 图表引擎 (直接渲染原生 <canvas>，背景透明融入深色主题)
   // ==========================================
 
-  function setupCanvas(canvas) {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const width = rect.width || canvas.clientWidth || 340;
-    const height = parseFloat(canvas.getAttribute('height')) || 180;
+  function isElementVisible(el) {
+    if (!el) return false;
+    return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  }
 
+  function setupCanvas(canvas, defaultHeight = 180) {
+    if (!canvas) return null;
+    const parent = canvas.parentElement;
+    if (!parent || !isElementVisible(parent)) {
+      return null;
+    }
+
+    const parentRect = parent.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const width = Math.floor(parentRect.width);
+    const height = parseFloat(canvas.getAttribute('height')) || defaultHeight;
+
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+
+    // 设置高分屏像素缓冲区 (Retina 高清适配)
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
+
+    // 设置 CSS 实际物理占用宽高
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
+    canvas.style.backgroundColor = 'transparent';
 
     const ctx = canvas.getContext('2d');
+    if (ctx.resetTransform) {
+      ctx.resetTransform();
+    } else {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
     return { ctx, width, height };
   }
 
   function renderCharts() {
+    const statsPane = document.getElementById('tab-stats');
+    if (!statsPane || !statsPane.classList.contains('active')) {
+      return;
+    }
     renderTrendChart();
     renderHourlyChart();
     renderScenarioChart();
@@ -931,9 +961,9 @@
   function renderTrendChart() {
     const canvas = DOM.trendChart;
     if (!canvas) return;
-    const { ctx, width, height } = setupCanvas(canvas);
-
-    ctx.clearRect(0, 0, width, height);
+    const setupRes = setupCanvas(canvas, 200);
+    if (!setupRes) return;
+    const { ctx, width, height } = setupRes;
 
     const rangeDays = state.currentTrendRange;
     const dates = [];
@@ -1034,9 +1064,9 @@
   function renderHourlyChart() {
     const canvas = DOM.hourlyChart;
     if (!canvas) return;
-    const { ctx, width, height } = setupCanvas(canvas);
-
-    ctx.clearRect(0, 0, width, height);
+    const setupRes = setupCanvas(canvas, 170);
+    if (!setupRes) return;
+    const { ctx, width, height } = setupRes;
 
     const hourlyCounts = new Array(24).fill(0);
     state.logs.forEach(log => {
@@ -1084,9 +1114,31 @@
   function renderScenarioChart() {
     const canvas = DOM.scenarioChart;
     if (!canvas) return;
-    const { ctx, width, height } = setupCanvas(canvas);
+    const parent = canvas.parentElement;
+    if (!parent || !isElementVisible(parent)) return;
 
-    ctx.clearRect(0, 0, width, height);
+    const parentRect = parent.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const size = Math.floor(parentRect.width > 0 ? Math.min(parentRect.width, 130) : 130);
+    if (size <= 0) return;
+
+    canvas.width = Math.round(size * dpr);
+    canvas.height = Math.round(size * dpr);
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    canvas.style.backgroundColor = 'transparent';
+
+    const ctx = canvas.getContext('2d');
+    if (ctx.resetTransform) {
+      ctx.resetTransform();
+    } else {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, size, size);
+
+    const width = size;
+    const height = size;
 
     const tagCounts = {};
     state.logs.forEach(log => {
@@ -1364,8 +1416,13 @@
         if (targetPane) targetPane.classList.add('active');
 
         if (targetId === 'tab-stats') {
-          setTimeout(renderCharts, 50);
           renderStatsOverview();
+          // 在变为可见之后（配合 requestAnimationFrame 获取真实容器宽高），再触发重绘图表，确保容器宽高不为 0
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              renderCharts();
+            });
+          });
         }
       });
     });
@@ -1445,6 +1502,25 @@
     });
     DOM.btnSeedDemoData.addEventListener('click', seedDemoData);
     DOM.btnClearAllData.addEventListener('click', clearAllData);
+
+    // 监听窗口尺寸和屏幕旋转，在统计 Tab 可见时自适应重绘图表
+    window.addEventListener('resize', () => {
+      const statsPane = document.getElementById('tab-stats');
+      if (statsPane && statsPane.classList.contains('active')) {
+        requestAnimationFrame(() => {
+          renderCharts();
+        });
+      }
+    });
+
+    window.addEventListener('orientationchange', () => {
+      const statsPane = document.getElementById('tab-stats');
+      if (statsPane && statsPane.classList.contains('active')) {
+        setTimeout(() => {
+          requestAnimationFrame(renderCharts);
+        }, 120);
+      }
+    });
   }
 
   // Toast 提示条
