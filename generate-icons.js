@@ -1,0 +1,48 @@
+const fs = require('fs');
+const path = require('path');
+
+// 生成一个精美的 SVG 图标
+const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0b1120"/>
+    </radialGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- 圆角背景 -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="rgba(16, 185, 129, 0.3)" stroke-width="8"/>
+
+  <!-- 光晕环 -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="rgba(56, 189, 248, 0.15)" stroke-width="4"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="rgba(16, 185, 129, 0.2)" stroke-width="2" stroke-dasharray="8 8"/>
+
+  <!-- 科学控烟绿苗造型 -->
+  <g filter="url(#glow)">
+    <path d="M256 370 C256 310 220 270 170 250 C160 210 180 160 230 140 C280 120 340 140 350 200 C360 260 310 320 256 370 Z" 
+          fill="url(#leafGrad)"/>
+    <path d="M256 370 Q256 260 300 200" fill="none" stroke="#a7f3d0" stroke-width="6" stroke-linecap="round"/>
+    
+    <!-- 左侧小舒缓幼苗 -->
+    <path d="M256 310 C230 280 190 280 175 300 C170 320 190 340 220 340 C240 340 250 325 256 310 Z" 
+          fill="#34d399" opacity="0.9"/>
+  </g>
+
+  <!-- 点缀清新星芒 -->
+  <circle cx="360" cy="150" r="8" fill="#38bdf8"/>
+  <circle cx="150" cy="220" r="5" fill="#34d399"/>
+</svg>`;
+
+const iconSvgPath = path.join(__dirname, 'icon.svg');
+fs.writeFileSync(iconSvgPath, svgContent, 'utf-8');
+console.log('SVG icon generated successfully.');

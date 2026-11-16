@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>清息 · 科学控烟与减量打卡</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="mobile-container">
+    <!-- 顶部状态栏与省钱账单 -->
+    <header class="app-header">
+      <div class="brand-row">
+        <div class="brand-info">
+          <span class="brand-icon">🌱</span>
+          <span class="brand-title">清息控烟</span>
+          <span class="brand-badge" id="planBadge">减量计划进行中</span>
+        </div>
+        <button id="btnOpenSettings" class="icon-button" aria-label="设置">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+
+      <!-- 省钱账单概览卡片 -->
+      <section class="saving-card">
+        <div class="saving-header">
+          <span class="saving-title">累计控烟成果</span>
+          <span class="saving-date" id="currentDateStr">今日</span>
+        </div>
+        <div class="saving-grid">
+          <div class="saving-item highlight">
+            <div class="saving-label">累计少花 (元)</div>
+            <div class="saving-val green" id="totalSavedMoney">￥0.00</div>
+          </div>
+          <div class="saving-item">
+            <div class="saving-label">累计少抽 (支)</div>
+            <div class="saving-val text-white" id="totalSavedCigs">0</div>
+          </div>
+          <div class="saving-item">
+            <div class="saving-label">成功克制 (次)</div>
+            <div class="saving-val blue" id="totalResistCount">0</div>
+          </div>
+        </div>
+      </section>
+    </header>
+
+    <!-- 导航切换 Tab -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="tab-dashboard" id="tabNavHome">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span>打卡中心</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-stats" id="tabNavStats">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>统计图表</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-data" id="tabNavData">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span>备份管理</span>
+      </button>
+    </nav>
+
+    <!-- 主屏内容区域 -->
+    <main class="main-content">
+      <!-- 页面 1: 打卡中心 -->
+      <div id="tab-dashboard" class="tab-pane active">
+        <!-- 今日配额进度卡 -->
+        <section class="quota-card">
+          <div class="quota-info">
+            <div>
+              <span class="quota-label">今日已抽</span>
+              <div class="quota-number">
+                <span id="todayCount" class="val-big">0</span>
+                <span class="val-sep">/</span>
+                <span id="targetQuota" class="val-target">10</span>
+                <span class="val-unit">支</span>
+              </div>
+            </div>
+            <div class="quota-status-tag" id="quotaStatusTag">状态良好</div>
+          </div>
+          <!-- 进度条 -->
+          <div class="quota-progress-track">
+            <div class="quota-progress-bar" id="quotaProgressBar" style="width: 0%"></div>
+          </div>
+          <!-- 控烟节奏指标 -->
+          <div class="rhythm-stats">
+            <div class="rhythm-item">
+              <span class="rhythm-sub">距离上一根</span>
+              <span class="rhythm-val" id="timeSinceLast">暂无记录</span>
+            </div>
+            <div class="rhythm-item">
+              <span class="rhythm-sub">推荐安全间隔</span>
+              <span class="rhythm-val" id="recommendedInterval">96 分钟</span>
+            </div>
+            <div class="rhythm-item">
+              <span class="rhythm-sub">间隔防护状态</span>
+              <span class="rhythm-val highlight-state" id="intervalStatus">安全已达标</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 近 7 天消耗与花费卡片 -->
+        <section class="seven-day-card">
+          <div class="seven-day-header">
+            <div class="seven-day-title-wrap">
+              <span class="badge-pill">近 7 天汇总</span>
+              <span class="seven-day-title">消耗与花费账单</span>
+            </div>
+            <div class="seven-day-cost-tag" id="sevenDayCostTag">￥0.00</div>
+          </div>
+          <div class="seven-day-main-row">
+            <div class="seven-day-count-box">
+              <span class="seven-day-count-val" id="sevenDayCountVal">0</span>
+              <span class="seven-day-count-unit">支</span>
+            </div>
+            <div class="seven-day-conversion-box">
+              <div class="conversion-pill" id="sevenDayConversionPill">折合 0.0 包 (0.00 条)</div>
+              <div class="conversion-sub" id="sevenDayDailyAvgText">日均约 0.0 支/天</div>
+            </div>
+          </div>
+          <div class="seven-day-footer-row">
+            <div class="seven-day-detail-item">
+              <span class="detail-label">近7天总烟资</span>
+              <span class="detail-val text-amber" id="sevenDayTotalCostVal">￥0.00</span>
+            </div>
+            <div class="seven-day-detail-item">
+              <span class="detail-label">单包折算基准</span>
+              <span class="detail-val" id="sevenDayPackPriceVal">￥25/包 (￥1.25/支)</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 核心操作热区 (拇指工学黄金区域) -->
+        <section class="action-section">
+          <!-- 核心打卡主按钮 -->
+          <div class="main-btn-container">
+            <button id="btnSmoke" class="big-action-button state-safe" type="button">
+              <div class="btn-ripple"></div>
+              <div class="btn-content">
+                <div class="smoke-icon" id="smokeIconAnim">🚬</div>
+                <div class="btn-primary-text" id="smokeBtnText">抽了一根</div>
+                <div class="btn-sub-text" id="smokeBtnSub">点击精准打卡记录</div>
+              </div>
+            </button>
+          </div>
+
+          <!-- 快捷撤销提醒行 (打卡后呈现) -->
+          <div class="undo-bar" id="undoBar" style="display: none;">
+            <span>刚才记录了一根（<span id="lastSmokeTimeStr">--:--</span>）</span>
+            <button id="btnQuickUndo" class="btn-text-action">一键撤销</button>
+          </div>
+
+          <!-- 忍一忍抗烟瘾主按钮 -->
+          <div class="secondary-btn-container">
+            <button id="btnResist" class="resist-button" type="button">
+              <div class="resist-icon">🧘‍♂️</div>
+              <div class="resist-text-group">
+                <span class="resist-title">烟瘾来了，忍 5 分钟</span>
+                <span class="resist-desc">启动科学深呼吸减压 · 成功克制+1</span>
+              </div>
+              <div class="resist-badge" id="todayResistBadge">今日已克制 0 次</div>
+            </button>
+          </div>
+
+          <!-- 减烟寄语/健康恢复倒计时小提示 -->
+          <div class="tip-card" id="healthTipCard">
+            <span class="tip-icon">💡</span>
+            <p class="tip-text" id="healthTipText">科学减量提示：烟瘾来袭时通常只有 3~5 分钟高峰，深呼吸或喝水能大幅缓解冲动！</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- 页面 2: 统计图表 -->
+      <div id="tab-stats" class="tab-pane">
+        <!-- 烟资花费与成果总账单 -->
+        <section class="stats-overview-card">
+          <div class="stats-overview-header">
+            <span class="stats-overview-title">烟资花费与控烟成果账单</span>
+            <span class="stats-overview-tag" id="statsActiveDaysTag">已结算 0 天</span>
+          </div>
+          <div class="stats-overview-grid">
+            <div class="stats-grid-item">
+              <span class="stats-grid-label">历史累计烟资总花费</span>
+              <div class="stats-grid-val text-amber" id="statsTotalExpense">￥0.00</div>
+              <span class="stats-grid-sub" id="statsTotalPacks">折合 0.0 包 (0.00 条)</span>
+            </div>
+            <div class="stats-grid-item">
+              <span class="stats-grid-label">真实累计少花 (已结算)</span>
+              <div class="stats-grid-val green" id="statsTotalSavedMoney">￥0.00</div>
+              <span class="stats-grid-sub" id="statsTotalSavedCigsText">累计少抽 0 支</span>
+            </div>
+          </div>
+          <div class="stats-overview-footer">
+            <span>近 7 天累计消耗：<strong id="stats7dText">0 支 (￥0.00)</strong></span>
+          </div>
+        </section>
+
+        <!-- 周期切换器 -->
+        <div class="segmented-control">
+          <button class="seg-item active" data-range="7" id="btnRange7">近 7 天趋势</button>
+          <button class="seg-item" data-range="30" id="btnRange30">近 30 天趋势</button>
+        </div>
+
+        <!-- 柱状图卡片 -->
+        <section class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">吸烟量与目标对比</h3>
+              <p class="chart-subtitle">绿柱代表达标，红柱代表超出上限</p>
+            </div>
+            <div class="chart-legend">
+              <span class="legend-dot green"></span><span>实际</span>
+              <span class="legend-line red"></span><span>上限</span>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="trendChart" height="200"></canvas>
+          </div>
+        </section>
+
+        <!-- 24小时高发时段分布图 -->
+        <section class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">24 小时高发时段热区</h3>
+              <p class="chart-subtitle">识别最容易产生吸烟冲动的时间段</p>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="hourlyChart" height="170"></canvas>
+          </div>
+        </section>
+
+        <!-- 场景诱因占比卡片 -->
+        <section class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">诱因与场景分布</h3>
+              <p class="chart-subtitle">针对高频诱发场景做好心理预案</p>
+            </div>
+          </div>
+          <div class="scenario-layout">
+            <div class="donut-chart-wrap">
+              <canvas id="scenarioChart" width="160" height="160"></canvas>
+            </div>
+            <div class="scenario-legend-list" id="scenarioLegendList">
+              <!-- 动态填充 -->
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 页面 3: 备份与数据管理 -->
+      <div id="tab-data" class="tab-pane">
+        <section class="settings-card">
+          <h3 class="settings-title">数据备份与迁移（纯本地存储）</h3>
+          <p class="settings-desc">所有打卡与克制数据纯本地保存在浏览器/WebView 中。支持下载文件备份或一键复制完整 JSON 文本。</p>
+          
+          <div class="backup-actions">
+            <!-- 一键复制备份 -->
+            <button id="btnCopyJSON" class="btn-primary-action" style="padding: 12px 16px;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>一键复制 JSON 备份文本</span>
+            </button>
+
+            <button id="btnExportJSON" class="btn-primary-outline">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>导出为 JSON 文件下载</span>
+            </button>
+
+            <label class="btn-primary-outline file-input-label">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>选择 JSON 文件导入恢复</span>
+              <input type="file" id="inputImportJSON" accept=".json" style="display: none;">
+            </label>
+          </div>
+
+          <!-- 快捷粘贴文本恢复 -->
+          <div class="text-backup-panel">
+            <span class="text-backup-label">剪贴板文本快速导入：</span>
+            <textarea id="textareaPasteJSON" class="backup-textarea" placeholder="在此粘贴之前复制的 JSON 备份数据..."></textarea>
+            <button id="btnRestoreFromText" class="btn-secondary" style="width: 100%; margin-top: 8px;">从粘贴文本导入恢复</button>
+          </div>
+        </section>
+
+        <!-- 演示与调试卡片 -->
+        <section class="settings-card">
+          <h3 class="settings-title">体验与演示工具</h3>
+          <p class="settings-desc">可一键填充过去 14 天的科学减量模拟记录，便于即刻查验各种趋势图表与省钱账单。</p>
+          <div class="backup-actions">
+            <button id="btnSeedDemoData" class="btn-secondary">一键生成 14 天演示数据</button>
+            <button id="btnClearAllData" class="btn-danger-outline">清空所有本地数据</button>
+          </div>
+        </section>
+
+        <!-- 打包 APK 极简指引 -->
+        <section class="settings-card">
+          <h3 class="settings-title">Android APK 打包指南</h3>
+          <p class="settings-desc">此应用代码为 100% 纯本地离线 PWA 设计，无任何外部 CDN 依赖，支持多种方案快速转为 Android 原生安装包：</p>
+          <div class="code-box">
+            <code>1. PWA一键生成: 使用 PWABuilder (pwabuilder.com)<br>
+2. Capacitor打包: <br>
+   npm i @capacitor/core @capacitor/cli @capacitor/android<br>
+   npx cap init 清息 com.qingxi.smokefree<br>
+   npx cap add android && npx cap open android
+            </code>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- 底部打卡后场景选择抽屉 (手动点击选择或关闭，取消倒计时) -->
+    <div id="scenarioDrawer" class="scenario-toast-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title-group">
+          <span class="drawer-icon">🏷️</span>
+          <span class="drawer-title">刚才是在什么场景下抽的？</span>
+        </div>
+        <button id="btnCloseScenario" class="btn-drawer-close" aria-label="关闭">✕</button>
+      </div>
+      <div class="scenario-chips" id="scenarioChips">
+        <button class="chip-item" data-tag="饭后">🍚 饭后</button>
+        <button class="chip-item" data-tag="工作压力">💼 工作压力</button>
+        <button class="chip-item" data-tag="开车">🚗 开车</button>
+        <button class="chip-item" data-tag="无聊">📱 无聊发呆</button>
+        <button class="chip-item" data-tag="社交">🍻 社交应酬</button>
+        <button class="chip-item" data-tag="起床">🌅 起床晨烟</button>
+        <button class="chip-item" data-tag="其他">✨ 其它</button>
+      </div>
+      <div class="drawer-footer-actions">
+        <button id="btnSkipScenario" class="btn-skip-drawer">暂不标记，直接收起</button>
+      </div>
+    </div>
+
+    <!-- 5分钟呼吸减压“忍一忍”模态弹窗 -->
+    <div id="modalResist" class="fullscreen-modal" style="display: none;">
+      <div class="breath-container">
+        <!-- 顶部关闭与状态 -->
+        <div class="breath-topbar">
+          <span class="breath-title">🌱 5分钟抗瘾减压呼吸</span>
+          <button id="btnCloseResist" class="btn-close-breath" aria-label="退出">✕</button>
+        </div>
+
+        <!-- 呼吸导引光环核心 -->
+        <div class="breath-circle-wrap">
+          <div class="breath-halo-outer"></div>
+          <div class="breath-circle" id="breathCircle">
+            <span class="breath-phase-text" id="breathPhaseText">吸气</span>
+            <span class="breath-counter-text" id="breathCounter">4</span>
+          </div>
+        </div>
+
+        <!-- 5分钟总倒计时 -->
+        <div class="breath-timer-display">
+          <span class="timer-label">剩余克制倒计时</span>
+          <span class="timer-digits" id="resistTotalTimer">05:00</span>
+        </div>
+
+        <!-- 科学抗瘾箴言 -->
+        <div class="breath-quote-box">
+          <p id="breathQuote" class="breath-quote">烟瘾在体内只是一道短暂的神经波浪，跟随呼吸起伏，它很快就会自行退散。</p>
+        </div>
+
+        <!-- 底部控制按钮 -->
+        <div class="breath-bottom-actions">
+          <button id="btnCompleteResistEarly" class="btn-success-solid">提前完成·我已克服冲动</button>
+          <button id="btnCancelResist" class="btn-ghost">放弃本次，返回首页</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 间隔未到二次确认防冲动模态框 -->
+    <div id="modalWarning" class="confirm-modal" style="display: none;">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog">
+        <div class="dialog-icon-wrap warning">
+          <span>⚠️</span>
+        </div>
+        <h3 class="dialog-title">离建议安全间隔还差 <span id="warningDiffMinutes" class="text-amber">--</span> 分钟！</h3>
+        <p class="dialog-desc">系统基于今日目标（<span id="warningDailyTarget">10</span>支）与清醒时间计算，当前立即吸烟将打乱今日减量节奏，使后半程超标风险增加 80%。</p>
+        <div class="dialog-actions">
+          <button id="btnDialogResist" class="btn-primary-action">先去忍 5 分钟 (推荐)</button>
+          <button id="btnDialogConfirmSmoke" class="btn-danger-text">仍要打卡记录</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 科学控烟参数设置模态框 -->
+    <div id="modalSettings" class="confirm-modal" style="display: none;">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog settings-dialog">
+        <div class="dialog-header-row">
+          <h3 class="dialog-title">科学控烟偏好设置</h3>
+          <button id="btnCloseSettings" class="btn-icon-close">✕</button>
+        </div>
+        
+        <form id="formSettings" class="settings-form">
+          <div class="form-group">
+            <label class="form-label" for="settingPackPrice">香烟单包价格 (元)</label>
+            <div class="input-unit-wrap">
+              <input type="number" id="settingPackPrice" min="1" max="1000" step="0.5" value="25" required>
+              <span class="input-unit">元/包 (20支)</span>
+            </div>
+            <span class="form-helper" id="perCigPriceHelper">折合单支: ￥1.25</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="settingPastDaily">既往日均吸烟量 (支/天)</label>
+            <div class="input-unit-wrap">
+              <input type="number" id="settingPastDaily" min="1" max="100" step="1" value="20" required>
+              <span class="input-unit">支</span>
+            </div>
+            <span class="form-helper">用于科学计算累计为您节省的烟草金钱与健康收益</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="settingDailyTarget">今日目标上限 (支/天)</label>
+            <div class="input-unit-wrap">
+              <input type="number" id="settingDailyTarget" min="1" max="100" step="1" value="10" required>
+              <span class="input-unit">支</span>
+            </div>
+            <span class="form-helper">建议每周递减 1~2 支，循序渐进无痛戒断</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">每日清醒时间段</label>
+            <div class="time-range-wrap">
+              <input type="time" id="settingWakeTime" value="08:00" required>
+              <span class="time-sep">至</span>
+              <input type="time" id="settingSleepTime" value="23:59" required>
+            </div>
+            <span class="form-helper" id="awakeIntervalHelper">清醒 16 小时，目标 10 支，推荐间隔约 96 分钟/支</span>
+          </div>
+
+          <div class="dialog-actions-row">
+            <button type="submit" class="btn-primary-action">保存配置</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 全局消息 Toast -->
+    <div id="toastMessage" class="toast-popup"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
